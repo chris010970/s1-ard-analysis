@@ -153,16 +153,13 @@ for pol in args.polarization:
             records = getRecords( plist )
                        
             # move onto next subplot
-            plt.subplot( rows, cols, idx )
+            ax = plt.subplot( rows, cols, idx )
             x, y = getData ( records )
 
             # sort out labelling 
-            xlab = None; ylab = None; title = None
-            if idx in [1, cols + 1 ]:
-                ylab = r'mean $\gamma^0$ [dB] (gamma)'
-                                                                                
-            if idx > cols:
-                xlab = r'mean $\gamma^0$ [dB] (snap)'
+            title = None
+            ylab = r'mean {} $\gamma^0$ [dB] (gamma)'.format( pol )                                                                            
+            xlab = r'mean {} $\gamma^0$ [dB] (snap)'.format( pol )
 
             # plot titles along top
             if idx <= cols:
@@ -177,9 +174,13 @@ for pol in args.polarization:
             scatter( x, y, title=title,
                             xlab=xlab, ylab=ylab,
                             xlim=lim, ylim=lim,
-                            denscol=True, measures=['cv_y', 'eq'], regline=True, grid=True)
+                            denscol=True, measures=[ 'mean_x', 'mean_y', 'rmse', 'eq' ], regline=True, o2o=True, grid=True)
+
+            ax.legend(loc='upper left')
             idx += 1
 
+
 # show plot
+#plt.tight_layout()
 plt.show()
 
