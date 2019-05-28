@@ -13,7 +13,7 @@ import datetime as dt
 from psycopg2.extensions import AsIs
 
 # landcover types
-landcover_types = { 'forest', 'grassland', 'sugarcane', 'evergreen' }
+landcover_types = { 'forest', 'grassland', 'sugarcane', 'evergreen', 'settlement', 'water', 'cultivated', 'coconut' }
 
 # create table utilised for temporal signature plots
 def populateTable( plist ):
@@ -31,8 +31,9 @@ def populateTable( plist ):
                         "INNER JOIN result_snap.%s_%s b ON a.fdate = b.fdate AND ST_Equals( a.geom, b.geom ) " \
                             "INNER JOIN meta c ON a.fdate = c.fdate ) " \
                                 "SELECT fdate, AVG(gamma_vv) gamma_vv_mean, STDDEV(gamma_vv) gamma_vv_stddev, AVG(gamma_vh) gamma_vh_mean, STDDEV(gamma_vh) gamma_vh_stddev, " \
-                                    "AVG(snap_vv) snap_vv_mean, STDDEV(snap_vv) snap_vv_stddev, AVG(snap_vh) snap_vh_mean, STDDEV(snap_vh) snap_vh_stddev FROM pts " \
-                                        "WHERE orbitdirection = '%s' GROUP BY fdate ORDER BY fdate );"
+                                    "AVG(snap_vv) snap_vv_mean, STDDEV(snap_vv) snap_vv_stddev, AVG(snap_vh) snap_vh_mean, STDDEV(snap_vh) snap_vh_stddev, " \
+                                        "SQRT( AVG ( POWER ( gamma_vv - snap_vv, 2 ) ) ) vv_rmse, SQRT( AVG ( POWER ( gamma_vh - snap_vh, 2 ) ) ) vh_rmse FROM pts " \
+                                            "WHERE orbitdirection = '%s' GROUP BY fdate ORDER BY fdate );"
 
         param_list = ( AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), AsIs( plist[ 'orbit' ] ),
                             AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), 
@@ -46,8 +47,9 @@ def populateTable( plist ):
                     "WITH pts AS ( SELECT DATE(a.fdate) fdate, a.vv gamma_vv, a.vh gamma_vh, b.vv snap_vv, b.vh snap_vh FROM result_gamma.%s_%s a " \
                         "INNER JOIN result_snap.%s_%s b ON a.fdate = b.fdate AND ST_Equals( a.geom, b.geom ) ) " \
                             "SELECT fdate, AVG(gamma_vv) gamma_vv_mean, STDDEV(gamma_vv) gamma_vv_stddev, AVG(gamma_vh) gamma_vh_mean, STDDEV(gamma_vh) gamma_vh_stddev, " \
-                                "AVG(snap_vv) snap_vv_mean, STDDEV(snap_vv) snap_vv_stddev, AVG(snap_vh) snap_vh_mean, STDDEV(snap_vh) snap_vh_stddev FROM pts " \
-                                    "GROUP BY fdate ORDER BY fdate );"
+                                "AVG(snap_vv) snap_vv_mean, STDDEV(snap_vv) snap_vv_stddev, AVG(snap_vh) snap_vh_mean, STDDEV(snap_vh) snap_vh_stddev, " \
+                                    "SQRT( AVG ( POWER ( gamma_vv - snap_vv, 2 ) ) ) vv_rmse, SQRT( AVG ( POWER ( gamma_vh - snap_vh, 2 ) ) ) vh_rmse FROM pts " \
+                                        "GROUP BY fdate ORDER BY fdate );"
                     
         param_list = ( AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), 
                             AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), 
