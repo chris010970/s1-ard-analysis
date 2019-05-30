@@ -30,9 +30,10 @@ def populateTable( plist, task ):
                         "b2 AS ( SELECT idx FROM scene_%s.band b, p WHERE b.pid = p.id AND name = 'vh' ), " \
                             "cat AS ( SELECT fid, fdate FROM scene_%s.cat, p WHERE fdate >= '%s' AND fdate <= '%s' AND pid = p.id ), " \
                                 "lc AS ( SELECT geom FROM sample.%s ), " \
-                                    "tile AS ( SELECT cat.fdate, geom, ST_NearestValue( rast, b1.idx, geom ) vv, ST_NearestValue( rast, b2.idx, geom ) vh FROM scene_%s.%s s, lc, cat, b1, b2 WHERE ST_Intersects( rast, geom ) AND s.fid = cat.fid ) " \
-                                        "SELECT fdate, geom, vv, vh FROM tile " \
-                                            "WHERE vv IS NOT NULL AND vh IS NOT NULL ORDER BY fdate )"
+                                    "tile AS ( SELECT cat.fdate, rast, geom, ST_NearestValue( rast, b1.idx, geom, false ) vv, ST_NearestValue( rast, b2.idx, geom, false ) vh FROM scene_%s.%s s, lc, cat, b1, b2 WHERE ST_Intersects( rast, geom ) AND s.fid = cat.fid ) " \
+                                        "SELECT fdate, geom, vv, vh FROM tile, b1, b2 " \
+                                            "WHERE vv IS NOT NULL AND vh IS NOT NULL AND vv != ST_BandNoDataValue( rast, b1.idx ) AND vh != ST_BandNoDataValue( rast, b2.idx ) " \
+                                                "ORDER BY fdate )"
 
     param_list = ( AsIs( plist[ 'schema' ] ), AsIs( plist[ 'table' ] ),
                         AsIs( plist[ 'alg' ] ), AsIs( plist[ 'product' ] ), 
