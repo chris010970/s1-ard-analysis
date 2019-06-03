@@ -18,6 +18,7 @@ from matplotlib.offsetbox import AnchoredText
 
 import matplotlib
 from scipy import stats 
+from util import saveFile
 
 matplotlib.rcParams['figure.figsize'] = (18, 12)
 matplotlib.rcParams['font.size'] = 8
@@ -29,12 +30,16 @@ colors= [ 'red', 'green', 'purple', 'lightblue', 'orange', 'teal', 'coral', 'lig
 # get a nice title
 def getTitle( args ):
 
-    title = '{} ARD Interoperability Analysis : GAMMA vs SNAP Error Distribution (All Scenes)'.format( args.database.capitalize() );
-
+    # switch on orbit filter
+    subtitle = 'All Scenes' 
     if args.orbit.upper() == 'ASCENDING' or args.orbit.upper() == 'DESCENDING':
-        title = '{} ARD Interoperability Analysis : GAMMA vs SNAP Error Distribution ({} Scenes)'.format( args.database.capitalize(), args.orbit.capitalize() ) 
+        subtitle = '{} Scenes'.format( args.orbit.capitalize() ) 
 
-    return title
+    # switch on slope
+    if len( args.slope ) > 0:
+        subtitle += '- {}'.format( args.slope.capitalize() )
+
+    return '{} ARD Interoperability Analysis : GAMMA vs SNAP Error Distribution ({})'.format ( args.database.capitalize(), subtitle )
 
 
 # convert records into numpy arrays for matplotlib
@@ -66,18 +71,18 @@ def getRecords( plist ):
     if plist[ 'orbit' ] == 'ASCENDING' or plist[ 'orbit' ] == 'DESCENDING':   
 
         # statistics generated for specific orbit direction
-        query = "SELECT %s_error_mean, %s_error_stddev FROM error.%s_%s_%s WHERE gamma_%s_stddev < %s AND snap_%s_stddev < %s ;" 
+        query = "SELECT %s_error_mean, %s_error_stddev FROM %s.%s_%s_%s WHERE gamma_%s_stddev < %s AND snap_%s_stddev < %s ;" 
         param_list = ( AsIs( plist[ 'pol' ] ), AsIs( plist[ 'pol' ] ), 
-                            AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), AsIs( plist[ 'orbit' ] ),
+                            AsIs( plist[ 'schema' ] ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), AsIs( plist[ 'orbit' ] ),
                                 AsIs( plist[ 'pol' ] ), AsIs( plist[ 'max_variance' ] ), 
                                     AsIs( plist[ 'pol' ] ), AsIs( plist[ 'max_variance' ] ) )
 
     else:
 
         # holistic statistics 
-        query = "SELECT %s_error_mean, %s_error_stddev FROM error.%s_%s WHERE gamma_%s_stddev < %s AND snap_%s_stddev < %s ;" 
+        query = "SELECT %s_error_mean, %s_error_stddev FROM %s.%s_%s WHERE gamma_%s_stddev < %s AND snap_%s_stddev < %s ;" 
         param_list = ( AsIs( plist[ 'pol' ] ), AsIs( plist[ 'pol' ] ), 
-                            AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), 
+                            AsIs( plist[ 'schema' ] ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ), 
                                 AsIs( plist[ 'pol' ] ), AsIs( plist[ 'max_variance' ] ), 
                                     AsIs( plist[ 'pol' ] ), AsIs( plist[ 'max_variance' ] ) )
 
@@ -126,12 +131,20 @@ def parseArguments(args=None):
                         help='polarization options (VV, VH)',
                         default=[ 'VV', 'VH' ] )
 
+    parser.add_argument('-s', '--slope',  
+                        help='slope option (flat, steep, none)',
+                        default='' )
+
     return parser.parse_args(args)
 
 
 # parse arguments
 args = parseArguments( sys.argv[1:] )
-plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database, 'max_variance' : 4.0 }
+plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database, 'max_variance' : 4.0, 'schema' : 'error' }
+
+# get schema names
+if len ( args.slope ) > 0:
+    plist[ 'schema' ] += '_' + args.slope
 
 # create figure and initialise title
 fig = plt.figure()
@@ -199,6 +212,9 @@ for pol in args.polarization:
             plt.grid()
             idx += 1
 
+# save file
+saveFile( args, 'error-distribution' )
+
 # show plot
-plt.show()
+#plt.show()
 

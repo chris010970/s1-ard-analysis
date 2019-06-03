@@ -13,8 +13,13 @@ import datetime as dt
 from psycopg2.extensions import AsIs
 
 from matplotlib import pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+
 import matplotlib
 import matplotlib.dates as mdates
+
+from scipy import stats 
+from util import saveFile
 
 matplotlib.rcParams['figure.figsize'] = (18, 12)
 matplotlib.rcParams['font.size'] = 8
@@ -28,11 +33,11 @@ colors= [ 'red', 'green', 'purple', 'lightblue', 'orange', 'teal', 'coral', 'lig
 def getTitle( args ):
 
     # switch on orbit filter
-    title = '{} ARD Interoperability Analysis : GAMMA vs SNAP Root Mean Squared Error (All Scenes)'.format ( args.database.capitalize() )
+    subtitle = 'All Scenes' 
     if args.orbit.upper() == 'ASCENDING' or args.orbit.upper() == 'DESCENDING':
-        title = '{} ARD Interoperability Analysis : GAMMA vs SNAP Root Mean Squared Error ({} Scenes)'.format( args.database.capitalize(), args.orbit.capitalize() ) 
+        subtitle = '{} Scenes'.format( args.orbit.capitalize() ) 
 
-    return title
+    return '{} ARD Interoperability Analysis : GAMMA vs SNAP Root Mean Squared Error ({})'.format ( args.database.capitalize(), subtitle )
 
 
 # convert db query results to lists
@@ -55,7 +60,7 @@ def getData( records ):
 
 
 # get records from database
-def getRecords( plist ):
+def getRecords( plist, schema ):
 
     # get connection
     conn = psycopg2.connect("dbname='{}' user='sac' host='localhost' password='sac'".format ( plist[ 'db' ] ) )
@@ -66,15 +71,15 @@ def getRecords( plist ):
     if plist[ 'orbit' ] == 'ASCENDING' or plist[ 'orbit' ] == 'DESCENDING':   
 
         # switch on optional orbit direction filter
-        query = "SELECT extract( epoch from fdate ), %s_rmse FROM timeline.%s_%s_%s";
+        query = "SELECT extract( epoch from fdate ), %s_rmse FROM %s.%s_%s_%s";
         param_list = ( AsIs( plist[ 'pol' ] ),                             
-                            AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ),  AsIs( plist[ 'orbit' ] ) )
+                            AsIs( schema ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ),  AsIs( plist[ 'orbit' ] ) )
 
     else:
 
-        query = "SELECT extract( epoch from fdate ), %s_rmse FROM timeline.%s_%s";
+        query = "SELECT extract( epoch from fdate ), %s_rmse FROM %s.%s_%s";
         param_list = ( AsIs( plist[ 'pol' ] ),
-                            AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ) )
+                            AsIs( schema ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ) )
 
     try:
 
@@ -150,7 +155,7 @@ for pol in args.polarization:
             plist[ 'landcover' ] = ctype
 
             # move onto next subplot
-            plt.subplot( rows, cols, idx )
+            ax = plt.subplot( rows, cols, idx )
 
             # sort out labelling 
             xlab = None; ylab = None; title = None
@@ -164,14 +169,31 @@ for pol in args.polarization:
 
             plt.title(title)
             plt.xlabel(xlab); plt.ylabel(ylab)
-            plt.ylim(1.2, 2.5)
+            #plt.ylim( 0.8, 2.4 );
 
-            # get records from db
-            records = getRecords( plist )
+            # for each orbit
+            fields = []
+            for slope in [ 'steep', 'flat' ]:
 
-            # plot time signature
-            x, y = getData ( records )
-            plt.plot(x, y)
+                # get records from db
+                schema = 'timeline' + '_' + slope
+                records = getRecords( plist, schema )
+
+                # plot time signature
+                x, y = getData ( records )
+                plt.plot(x, y,label=slope)
+
+                # create text with stats
+                fields.append ( r'{} $\mu$ = {:.2f}'.format( slope, np.mean( y ) ) )
+   
+            # create and draw text box
+            text = '\n'.join(fields)
+            text_box = AnchoredText(text, frameon=True, loc='lower right')
+
+            plt.setp(text_box.patch, facecolor='white')  # , alpha=0.5
+            plt.gca().add_artist(text_box)
+
+            ax.legend(loc='upper left')
 
         # next subplot
         plt.grid()  
@@ -179,5 +201,8 @@ for pol in args.polarization:
 
 # show plot
 plt.gcf().autofmt_xdate()
-plt.show()
+
+# save file
+saveFile( args, 'timeline-rmse' )
+#plt.show()
 

@@ -16,6 +16,8 @@ from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.dates as mdates
 
+from util import saveFile
+
 matplotlib.rcParams['figure.figsize'] = (18, 12)
 matplotlib.rcParams['font.size'] = 8
 
@@ -23,16 +25,19 @@ matplotlib.rcParams['font.size'] = 8
 landcover_types = { 'forest', 'grassland', 'sugarcane', 'evergreen' }
 colors= [ 'red', 'green', 'purple', 'lightblue', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise', 'darkgreen', 'tan', 'salmon', 'gold' ]
 
-
 # get nice title
 def getTitle( args ):
-
+  
     # switch on orbit filter
-    title = '{} ARD Interoperability Analysis : Temporal Signatures (All Scenes)'.format ( args.database.capitalize() )
+    subtitle = 'All Scenes' 
     if args.orbit.upper() == 'ASCENDING' or args.orbit.upper() == 'DESCENDING':
-        title = '{} ARD Interoperability Analysis : Temporal Signatures ({} Scenes)'.format( args.database.capitalize(), args.orbit.capitalize() ) 
+        subtitle = '{} Scenes'.format( args.orbit.capitalize() ) 
 
-    return title
+    # switch on slope
+    if len( args.slope ) > 0:
+        subtitle += '- {}'.format( args.slope.capitalize() )
+
+    return '{} ARD Interoperability Analysis : Temporal Signatures ({})'.format ( args.database.capitalize(), subtitle )
 
 
 # convert db query results to lists
@@ -67,17 +72,17 @@ def getRecords( plist ):
     if plist[ 'orbit' ] == 'ASCENDING' or plist[ 'orbit' ] == 'DESCENDING':   
 
         # switch on optional orbit direction filter
-        query = "SELECT extract( epoch from fdate ), %s_%s_mean, %s_%s_stddev FROM timeline.%s_%s_%s";
+        query = "SELECT extract( epoch from fdate ), %s_%s_mean, %s_%s_stddev FROM %s.%s_%s_%s";
         param_list = ( AsIs( plist[ 'alg' ] ), AsIs( plist[ 'pol' ] ), 
                             AsIs( plist[ 'alg' ] ), AsIs( plist[ 'pol' ] ),  
-                                AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ),  AsIs( plist[ 'orbit' ] ) )
+                                AsIs( plist[ 'schema' ] ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ),  AsIs( plist[ 'orbit' ] ) )
 
     else:
 
-        query = "SELECT extract( epoch from fdate ), %s_%s_mean, %s_%s_stddev FROM timeline.%s_%s";
+        query = "SELECT extract( epoch from fdate ), %s_%s_mean, %s_%s_stddev FROM %s.%s_%s";
         param_list = ( AsIs( plist[ 'alg' ] ), AsIs( plist[ 'pol' ] ), 
                             AsIs( plist[ 'alg' ] ), AsIs( plist[ 'pol' ] ),  
-                                AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ) )
+                                AsIs( plist[ 'schema' ] ), AsIs( plist[ 'product' ] ), AsIs( plist[ 'landcover' ] ) )
 
     try:
 
@@ -130,12 +135,20 @@ def parseArguments(args=None):
                         help='algorithm options (gamma, snap)',
                         default=[ 'gamma', 'snap' ] )
 
+    parser.add_argument('-s', '--slope',  
+                        help='slope option (flat, steep, none)',
+                        default='' )
+
     return parser.parse_args(args)
 
 
 # parse arguments
 args = parseArguments( sys.argv[1:] )
-plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database }
+plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database, 'schema': 'timeline' }
+
+# get schema names
+if len ( args.slope ) > 0:
+    plist[ 'schema' ] += '_' + args.slope
 
 # define plot structure
 rows = len( args.alg ); cols = len ( args.landcover )
@@ -194,5 +207,8 @@ for alg in args.alg:
 
 # show plot
 plt.gcf().autofmt_xdate()
-plt.show()
+
+# save file
+saveFile( args, 'timeline' )
+#plt.show()
 
