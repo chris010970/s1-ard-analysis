@@ -1,0 +1,46 @@
+
+./plot-timeline-rmse.py srtm_1sec_20m -d alps -c forest
+./plot-timeline-rmse.py srtm_1sec_20m -d alps -c forest -o ascending
+./plot-timeline-rmse.py srtm_1sec_20m -d alps -c forest -o descending
+
+./plot-timeline.py srtm_1sec_20m -d alps -c forest
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o ascending
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o descending
+
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -s flat
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o ascending -s flat
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o descending -s flat
+
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -s steep
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o ascending -s steep
+./plot-timeline.py srtm_1sec_20m -d alps -c forest -o descending -s steep
+
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o ascending
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o descending
+
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -s flat
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o ascending -s flat
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o descending -s flat
+
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -s steep
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o ascending -s steep
+./scatter-algorithm.py srtm_1sec_20m -d alps -c forest -o descending -s steep
+
+./histogram-error.py srtm_1sec_20m -d alps -c forest
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o ascending
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o descending
+
+./histogram-error.py srtm_1sec_20m -d alps -c forest -s flat
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o ascending -s flat
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o descending -s flat
+
+./histogram-error.py srtm_1sec_20m -d alps -c forest -s steep
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o ascending -s steep
+./histogram-error.py srtm_1sec_20m -d alps -c forest -o descending -s steep
+
+./scatter-orbit.py srtm_1sec_20m -d alps -c forest
+./scatter-orbit.py srtm_1sec_20m -d alps -c forest -s flat
+./scatter-orbit.py srtm_1sec_20m -d alps -c forest -s steep
+
+

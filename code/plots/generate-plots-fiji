@@ -1,0 +1,51 @@
+
+./plot-timeline-rmse.py srtm_1sec_20m -d fiji -c evergreen grassland
+./plot-timeline-rmse.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending
+./plot-timeline-rmse.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending
+
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending
+
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -s flat
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s flat
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s flat
+
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -s steep
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s steep
+./plot-timeline.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s steep
+
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending
+
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -s flat
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s flat
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s flat
+
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -s steep
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s steep
+./scatter-algorithm.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s steep
+
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending
+
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -s flat
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s flat
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s flat
+
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -s steep
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o ascending -s steep
+./histogram-error.py srtm_1sec_20m -d fiji -c evergreen grassland -o descending -s steep
+
+./scatter-orbit.py srtm_1sec_20m -d fiji -c evergreen
+./scatter-orbit.py srtm_1sec_20m -d fiji -c grassland
+
+./scatter-orbit.py srtm_1sec_20m -d fiji -c evergreen -s flat
+./scatter-orbit.py srtm_1sec_20m -d fiji -c grassland -s flat
+
+./scatter-orbit.py srtm_1sec_20m -d fiji -c evergreen -s steep
+./scatter-orbit.py srtm_1sec_20m -d fiji -c grassland -s steep
+
+
