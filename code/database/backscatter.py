@@ -29,18 +29,18 @@ def populateTable( plist, task ):
                     "b1 AS ( SELECT idx FROM scene_%s.band b, p WHERE b.pid = p.id AND name = 'vv' ), " \
                         "b2 AS ( SELECT idx FROM scene_%s.band b, p WHERE b.pid = p.id AND name = 'vh' ), " \
                             "cat AS ( SELECT fid, fdate FROM scene_%s.cat, p WHERE fdate >= '%s' AND fdate <= '%s' AND pid = p.id ), " \
-                                "lc AS ( SELECT geom FROM sample.%s ), " \
+                                "lc AS ( SELECT geom FROM %s.%s ), " \
                                     "tile AS ( SELECT cat.fdate, rast, geom, ST_NearestValue( rast, b1.idx, geom, false ) vv, ST_NearestValue( rast, b2.idx, geom, false ) vh FROM scene_%s.%s s, lc, cat, b1, b2 WHERE ST_Intersects( rast, geom ) AND s.fid = cat.fid ) " \
                                         "SELECT fdate, geom, vv, vh FROM tile, b1, b2 " \
                                             "WHERE vv IS NOT NULL AND vh IS NOT NULL AND vv != ST_BandNoDataValue( rast, b1.idx ) AND vh != ST_BandNoDataValue( rast, b2.idx ) " \
                                                 "ORDER BY fdate )"
 
-    param_list = ( AsIs( plist[ 'schema' ] ), AsIs( plist[ 'table' ] ),
+    param_list = ( AsIs( plist[ 'out_schema' ] ), AsIs( plist[ 'table' ] ),
                         AsIs( plist[ 'alg' ] ), AsIs( plist[ 'product' ] ), 
                             AsIs( plist[ 'alg' ] ), 
                                 AsIs( plist[ 'alg' ] ), 
                                     AsIs( plist[ 'alg' ] ), AsIs( task[ 'start' ].strftime('%Y-%m-%d %H:%M:%S') ), AsIs( task[ 'end' ].strftime('%Y-%m-%d %H:%M:%S') ), 
-                                        AsIs( plist[ 'landcover' ] ), 
+                                        AsIs( plist[ 'in_schema' ] ), AsIs( plist[ 'landcover' ] ), 
                                             AsIs( plist[ 'alg' ] ), AsIs( plist[ 'product' ] ) )
 
     try:
@@ -70,16 +70,16 @@ def createTable( plist ):
     try:
 
         # create sample schema if not exists
-        cur.execute( "CREATE SCHEMA IF NOT EXISTS %s;", ( [ AsIs( plist[ 'schema' ] ) ] )  )
+        cur.execute( "CREATE SCHEMA IF NOT EXISTS %s;", ( [ AsIs( plist[ 'out_schema' ] ) ] )  )
         conn.commit()
 
         # delete sample table if not exists
-        cur.execute( "DROP TABLE IF EXISTS %s.%s;" , ( AsIs( plist[ 'schema' ] ), AsIs( plist[ 'table' ] ) ) )
+        cur.execute( "DROP TABLE IF EXISTS %s.%s;" , ( AsIs( plist[ 'out_schema' ] ), AsIs( plist[ 'table' ] ) ) )
         conn.commit()
 
         # delete sample table if not exists
         cur.execute( "CREATE TABLE IF NOT EXISTS %s.%s ( fdate TIMESTAMP, geom GEOMETRY, vv double precision, vh double precision );" , 
-                ( AsIs( plist[ 'schema' ] ), AsIs( plist[ 'table' ] ) ) )
+                ( AsIs( plist[ 'out_schema' ] ), AsIs( plist[ 'table' ] ) ) )
         conn.commit()
 
     # handle exception
@@ -171,51 +171,6 @@ def getTaskList( plist, args ):
     return tasklist
 
 
-# generate random selection of points coincident with landcover class and aoi
-def getPoiSampleList( args, ctype ):
-
-    # function return vars
-    x = []; y = []
-
-    # get connection
-    conn = psycopg2.connect("dbname='{}' user='sac' host='localhost' password='sac'".format( plist[ 'db' ] ) )
-    cur = conn.cursor()
-
-    # construct bbox filter if aoi defined
-    sub_filter = ''
-    if args.aoi is not None:
-        sub_filter = "WHERE ST_Intersects ( geom, ST_Transform( ST_MakeEnvelope( {}, {}, {}, {}, 4326 ), {} ) )".format( args.aoi[ 0 ], args.aoi[ 1 ], args.aoi[ 2 ], args.aoi[ 3 ], args.aoi[ 4 ] )
-
-    # construct query
-    query = "CREATE TABLE sample.%s AS WITH pts AS ( SELECT geom FROM landcover_poi.%s ORDER BY RANDOM() ) " \
-                " SELECT geom FROM pts " \
-                    + sub_filter + " ORDER BY RANDOM() LIMIT %s;"
-
-    try:
-
-        # create sample schema if not exists
-        cur.execute( "CREATE SCHEMA IF NOT EXISTS sample;" )
-        conn.commit()
-
-        # delete sample table if not exists
-        cur.execute( "DROP TABLE IF EXISTS sample.%s;" , ( [ AsIs( ctype ) ] ) )
-        conn.commit()
-
-        # execute query
-        cur.execute( query, ( AsIs( ctype ), AsIs( ctype ), AsIs( args.samples ) ) )
-        conn.commit()
-        
-    # handle exception
-    except psycopg2.Error as e:
-        print ( e.pgerror )    
-
-    # close connection
-    # print ( cur.query )
-    conn.close()
-
-    return
-
-
 # parse command line arguments
 def parseArguments(args=None):
 
@@ -227,24 +182,15 @@ def parseArguments(args=None):
                             action="store")
 
     # optional arguments
-    parser.add_argument('-s', '--start',
+    parser.add_argument('-ts', '--start',
                         help='start date filter (DD/MM/YYYY HH:MM:SS)')
 
-    parser.add_argument('-e', '--end',
+    parser.add_argument('-te', '--end',
                         help='end date filter (DD/MM/YYYY HH:MM:SS)')
 
     parser.add_argument('-d', '--database',
                         help='database',
                         default='fiji')
-
-    parser.add_argument('-n', '--samples',
-                        type=int,
-                        help='number of point samples to compute statistics per scene',
-                        default='10000')
-
-    parser.add_argument('-a', '--aoi',  
-                        nargs=5,                     
-                        help='latitude / longitude bbox to constrain statistical analysis (xmin ymin xmax ymax target-epsg)' )
 
     parser.add_argument('-o', '--orbit',  
                         help='orbit direction (ascending, descending)',
@@ -255,7 +201,7 @@ def parseArguments(args=None):
                         help='landcover options (forest, grassland)',
                         default=[ 'forest', 'grassland' ] )
 
-    parser.add_argument('-t', '--threads',  
+    parser.add_argument('-n', '--threads',  
                         type=int,
                         help='number of threads',
                         default=1 )
@@ -265,25 +211,26 @@ def parseArguments(args=None):
                         help='algorithm options',
                         default=[ 'gamma', 'snap' ] )
 
+    parser.add_argument('-s', '--slope',  
+                        help='slope option (flat, steep, none)',
+                        default='' )
 
     return parser.parse_args(args)
 
 
 # parse arguments
 args = parseArguments( sys.argv[1:] )
-plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database }
+plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database, 'in_schema' : 'sample' }
 
-# generate sample points for landcover classes
-for ctype in landcover_types:
-    if ctype in args.landcover:
-        getPoiSampleList( args, ctype )
+if len ( args.slope ) > 0:
+    plist[ 'in_schema' ] += '_' + args.slope
 
 # for each algorithm
 for alg in args.alg:
 
     # initialise schema
     plist[ 'alg' ] = alg
-    plist[ 'schema' ] = 'result_' + alg
+    plist[ 'out_schema' ] = plist[ 'in_schema' ].replace( 'sample', 'result' ) + '_' + alg
 
     # for each landcover class 
     for ctype in landcover_types:

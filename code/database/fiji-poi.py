@@ -16,8 +16,8 @@ schema = 'landcover_poi'
 
 # define on class by class basis
 max_samples             = 10000
-default_sample_rate     = 250000
-default_min_area        = 1000000
+default_sample_rate     = 10000
+default_min_area        = 100000
 
 # translate landcover into sql filter based on numeric identifier
 def getTypeFilter( ctype ):
@@ -45,8 +45,9 @@ def getEvergreenPoi():
 
     # dump forest points coincident with moist rainfall zone (probably evergreen forest)
     query = "CREATE TABLE IF NOT EXISTS %s.evergreen AS " \
-                "WITH moist AS ( SELECT geom FROM ancillary.rainfall_zone WHERE DN = 3 )  " \
-                    "SELECT area, (ST_Dump(a.geom)).geom FROM landcover_poi.forest a, moist b WHERE ST_Intersects ( a.geom, b.geom ); "
+                "WITH moist_zone AS ( SELECT geom FROM ancillary.rainfall_zone WHERE DN = 3 ), " \
+                    "pts AS ( SELECT a.area, a.geom FROM landcover_poi.forest a, moist_zone b WHERE ST_Intersects ( a.geom, b.geom ) ) " \
+                        "SELECT geom, ST_NearestValue( rast, 1, geom ) slope FROM ancillary.dem_slope, pts WHERE ST_Intersects( rast, geom ); "
 
     try:
 
@@ -84,14 +85,14 @@ def getLandcoverPoi( ctype ):
 
     # oversample smaller areas
     if ctype == 'sugarcane' or ctype == 'coconut':
-        sample_rate = 100
+        sample_rate = 1000
         min_area = 1000
 
     # generate random points inside landcover polygons 
     query = "CREATE TABLE IF NOT EXISTS %s.%s AS " \
-                "WITH polys AS (  " \
-                    "SELECT gid, ST_Area(geom) area, CAST( (ST_Area(geom) / %s ) AS INTEGER ) samples, geom FROM ancillary.fiji_32760 WHERE %s )" \
-                        "SELECT area, (ST_Dump( ST_GeneratePoints( geom, LEAST( samples, %s ) ) ) ).geom geom FROM polys WHERE area > %s;"
+                "WITH polys AS ( SELECT gid, ST_Area(geom) area, CAST( (ST_Area(geom) / %s ) AS INTEGER ) samples, geom FROM ancillary.fiji_32760 WHERE %s ), " \
+                    "pts AS ( SELECT area, (ST_Dump( ST_GeneratePoints( geom, LEAST( samples, %s ) ) ) ).geom geom FROM polys WHERE area > %s ) " \
+                        "SELECT area, geom, ST_NearestValue( rast, 1, geom ) slope FROM ancillary.dem_slope, pts WHERE ST_Intersects( rast, geom ); "
 
     try:
 
