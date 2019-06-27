@@ -21,7 +21,7 @@ from scipy import stats
 from util import saveFile
 
 matplotlib.rcParams['figure.figsize'] = (18, 12)
-matplotlib.rcParams['font.size'] = 8
+matplotlib.rcParams['font.size'] = 12
 
 # supported land cover classes 
 landcover_types = { 'forest', 'grassland', 'sugarcane', 'evergreen' }
@@ -138,6 +138,11 @@ def parseArguments(args=None):
     return parser.parse_args(args)
 
 
+# reject outliers
+def reject_outliers(data, m=2):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
+
+
 # parse arguments
 args = parseArguments( sys.argv[1:] )
 plist = { 'orbit' : args.orbit.upper(), 'product' : args.product, 'db' : args.database, 'max_variance' : 4.0, 'schema' : 'error' }
@@ -192,7 +197,7 @@ for pol in args.polarization:
             lnspc = np.linspace(xmin, xmax, len(mean))
 
             # get normal distribution stats
-            pdf_mean, pdf_sigma = stats.norm.fit( mean )
+            pdf_mean, pdf_sigma = stats.norm.fit( reject_outliers( mean ) )
             pdf_g = stats.norm.pdf(lnspc, pdf_mean, pdf_sigma)
             plt.plot(lnspc, pdf_g, label="Gaussian")
 
@@ -216,5 +221,5 @@ for pol in args.polarization:
 saveFile( args, 'error-distribution' )
 
 # show plot
-#plt.show()
+plt.show()
 
